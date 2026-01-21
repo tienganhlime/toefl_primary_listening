@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIME - LISTENING TEST WEEK 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #16a34a;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .audio-player-main {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            border-radius: 16px;
+            padding: 20px 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            z-index: 9999;
+            min-width: 400px;
+        }
+        .audio-controls-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .play-btn-main {
+            background: white;
+            color: #16a34a;
+            border: none;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .play-btn-main:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+        .play-btn-main:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .audio-info-main {
+            color: white;
+            flex: 1;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,0.3);
+            outline: none;
+            border-radius: 2px;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .volume-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: white;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+        .question-image {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 16px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .question-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+        }
+        .correct-answer {
+            background-color: #C8E6C9 !important;
+            border-color: #4CAF50 !important;
+        }
+        .wrong-answer {
+            background-color: #FFCDD2 !important;
+            border-color: #F44336 !important;
+        }
+        .transcript-box {
+            background: white;
+            border: 2px solid #1976D2;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            line-height: 1.8;
+            white-space: pre-line;
+            color: #333;
+        }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+    </style>
+</head>
+<body>
+
+<!-- Màn hình nhập thông tin -->
+<div id="infoScreen" class="min-h-screen p-4 fade-in">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 mt-8">
+            <div class="text-center mb-8">
+                <img src="https://gofirst.pro/images/uploads/62/baseimg/logo_16541442053.png" 
+                     alt="LIME Logo" 
+                     class="w-32 h-32 mx-auto mb-4 object-contain">
+                <h1 class="text-4xl font-bold text-green-700 mb-2">Trung Tâm Tiếng Anh LIME</h1>
+                <p class="text-green-600 text-lg">Hotline: 0976222792</p>
+                <div class="mt-4 h-1 w-32 bg-green-500 mx-auto rounded"></div>
+            </div>
+            
+            <div class="bg-green-50 rounded-xl p-6 mb-6">
+                <h2 class="text-2xl font-bold text-green-800 mb-4" id="testTitle">LISTENING TEST - WEEK 2</h2>
+                <div class="space-y-2 text-green-700">
+                    <p>🎧 Số câu hỏi: <span id="totalQuestions">39</span> câu</p>
+                    <p>⏰ Thời gian: Theo độ dài bài nghe (~40 phút)</p>
+                    <p>📊 Audio sẽ phát 1 lần duy nhất</p>
+                    <p>✅ Làm bài trực tuyến, chấm điểm tự động</p>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 mb-6">
+                <div class="flex items-start gap-2">
+                    <svg class="w-6 h-6 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <div class="text-yellow-800 text-sm">
+                        <p class="font-bold mb-1">⚠️ Lưu ý quan trọng:</p>
+                        <p>• Đảm bảo âm lượng thiết bị ở mức vừa phải</p>
+                        <p>• Audio sẽ chạy 1 lần, không thể dừng hoặc tua lại</p>
+                        <p>• Sau khi nộp bài, bạn có thể nghe lại và tua thoải mái</p>
+                        <p>• Khi audio kết thúc = hết giờ làm bài</p>
+                        <p>• Hãy tập trung cao độ khi làm bài!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-green-800 font-semibold mb-2">Mã học sinh *</label>
+                    <input type="text" id="studentCode" 
+                        class="w-full px-4 py-3 border-2 border-green-300 rounded-lg focus:border-green-500 focus:outline-none"
+                        placeholder="Ví dụ: HS001">
+                    <p class="text-sm text-gray-600 mt-1">💡 Nếu chưa có mã, hãy liên hệ giáo viên để được cấp mã</p>
+                </div>
+            </div>
+
+            <button onclick="startTest()" 
+                class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                BẮT ĐẦU LÀM BÀI
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Màn hình làm bài -->
+<div id="testScreen" class="hidden min-h-screen p-4 pb-32">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header sticky -->
+        <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6 sticky top-4 z-10">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <img src="https://gofirst.pro/images/uploads/62/baseimg/logo_16541442053.png" 
+                         alt="LIME Logo" 
+                         class="w-12 h-12 object-contain">
+                    <div>
+                        <h1 class="text-2xl font-bold text-green-700">LIME</h1>
+                        <p class="text-green-600 text-sm" id="headerStudentCode"></p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-lg">
+                        <svg class="w-6 h-6" id="clockIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                        </svg>
+                        <span id="audioStatus" class="text-sm font-bold text-green-600">Chưa bắt đầu</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Tiến độ: <span id="progress">0</span>/<span id="totalQuestionsDisplay">39</span> câu</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div id="progressBar" class="bg-green-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nội dung bài test -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+            <h2 class="text-3xl font-bold text-green-800 mb-6 text-center" id="testTitleHeader">LISTENING TEST - WEEK 2</h2>
+            
+            <div id="questionsContainer" class="space-y-8">
+                <!-- Questions will be inserted here -->
+            </div>
+
+            <div class="mt-8 pt-6 border-t-2 border-green-200">
+                <button onclick="submitTest()" id="submitBtn"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 text-xl shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    NỘP BÀI
+                </button>
+                
+                <div id="warningBox" class="hidden mt-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg flex items-start gap-2">
+                    <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <p class="text-yellow-800 text-sm">
+                        Bạn còn <span id="unansweredCount">39</span> câu chưa trả lời. Hãy kiểm tra lại trước khi nộp bài!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audio Player cố định -->
+<div id="audioPlayerMain" class="audio-player-main hidden">
+    <div class="audio-controls-main">
+        <button class="play-btn-main" onclick="toggleAudio()" id="playBtnMain">
+            ▶
+        </button>
+        <div class="audio-info-main">
+            <div class="font-bold text-lg">Listening Test Audio</div>
+            <div class="text-sm opacity-90" id="audioTime">00:00 / 00:00</div>
+        </div>
+        <div class="volume-control">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"></path>
+            </svg>
+            <input type="range" min="0" max="100" value="100" class="volume-slider" onchange="setVolume(this.value)" id="volumeSlider">
+        </div>
+    </div>
+    <audio id="mainAudio" onended="onAudioComplete()" ontimeupdate="updateAudioTime()">
+        <source src="" type="audio/mpeg">
+    </audio>
+</div>
+
+<!-- Màn hình kết quả -->
+<div id="resultScreen" class="hidden min-h-screen p-4 pb-32">
+    <div class="max-w-5xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 mt-8 fade-in">
+            <div class="text-center mb-6">
+                <img src="https://gofirst.pro/images/uploads/62/baseimg/logo_16541442053.png" 
+                     alt="LIME Logo" 
+                     class="w-32 h-32 mx-auto mb-4 object-contain">
+                <h1 class="text-3xl font-bold text-green-700 mb-2">Trung Tâm Tiếng Anh LIME</h1>
+                <p class="text-green-600">Hotline: 0976222792</p>
+            </div>
+
+            <div class="text-center mb-8">
+                <svg class="w-24 h-24 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h2 class="text-3xl font-bold text-green-800 mb-4">Nộp bài thành công!</h2>
+                <p class="text-xl text-gray-700 mb-2">Kết quả đã được ghi nhận</p>
+            </div>
+
+            <div class="bg-green-50 rounded-xl p-6 mb-6 border-2 border-green-200">
+                <div class="text-center space-y-3">
+                    <p class="text-lg text-gray-700">📊 Điểm số: <span id="resultScore" class="font-bold text-green-700"></span></p>
+                    <p class="text-lg text-gray-700">✅ Số câu đúng: <span id="resultCorrect" class="font-bold text-green-700"></span></p>
+                    <p class="text-lg text-gray-700">⏰ Thời gian làm bài: <span id="resultTime" class="font-bold text-green-700"></span></p>
+                </div>
+            </div>
+
+            <!-- Audio Player để nghe lại -->
+            <div class="bg-green-50 rounded-xl p-6 mb-6 border-2 border-green-200">
+                <h3 class="text-xl font-bold text-green-800 mb-4 text-center">🎧 Nghe lại bài test (có thể tua/dừng)</h3>
+                <audio id="reviewAudio" controls class="w-full" style="height: 54px;">
+                    <source src="" type="audio/mpeg">
+                </audio>
+            </div>
+
+            <!-- Hiển thị lại bài thi -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="text-2xl font-bold text-green-800 mb-4 text-center">📝 Xem lại bài làm của bạn</h3>
+                <p class="text-center text-gray-600 mb-6">🟢 Câu đúng | 🔴 Câu sai</p>
+                <div id="reviewContainer" class="space-y-8">
+                    <!-- Review questions will be inserted here -->
+                </div>
+            </div>
+
+            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-green-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <h3 class="font-bold text-green-800 mb-2">📝 Lưu ý:</h3>
+                        <p class="text-green-700">
+                            Kết quả đã được lưu vào hệ thống. Giáo viên sẽ xem xét và phản hồi trong buổi học tới.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="sendReplayLog()" id="sendReplayBtn"
+                class="w-full mb-4 bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                📊 Gửi lịch sử nghe lại cho giáo viên
+            </button>
+
+            <button onclick="location.reload()" 
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 text-lg shadow-lg">
+                Về trang chủ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== CẤU HÌNH - ĐIỀN VÀO ĐÂY ==========
+
+// 1. URL Google Apps Script
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzeICrrAzp3ML2F-ME8cb7NQzr01t98crCry8DH5kvVnpHU8Mcs9kwQTCjMgUc4nGjd/exec';
+
+// 2. Thông tin bài kiểm tra
+const TEST_CONFIG = {
+    testWeek: 'Week2',
+    testTitle: 'LISTENING TEST - WEEK 2',
+    totalQuestions: 39,
+    testType: 'Listening'
+};
+
+// 3. URL Audio (để trống, bạn điền sau)
+const AUDIO_URL = 'https://res.cloudinary.com/dzby0c2up/video/upload/v1768968445/File-nghe-test-3_xvh0u0.mp3';
+
+// 4. Đáp án đúng
+const correctAnswers = {
+    1:'B', 2:'A', 3:'B', 4:'A', 5:'B', 6:'C', 7:'A',
+    8:'C', 9:'B', 10:'C', 11:'B', 12:'B', 13:'B', 14:'B',
+    15:'B', 16:'B', 17:'B', 18:'B', 19:'B', 20:'A', 21:'A',
+    22:'A', 23:'B', 24:'A', 25:'C',
+    26:'C', 27:'B', 28:'C', 29:'B',
+    30:'B', 31:'A', 32:'B',
+    33:'B', 34:'A', 35:'B',
+    36:'B', 37:'C', 38:'B', 39:'B'
+};
+
+// 5. Link hình ảnh (để trống, bạn điền sau)
+const questionImages = {
+    1: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970350/1_jsiukd.png',
+    2: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970349/2_zty8l6.png',
+    3: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970349/3_r5xqjr.png',
+    4: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970349/4_ymq5u0.png',
+    5: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970350/5_cprrxg.png',
+    6: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970349/6_oyj7yk.png',
+    7: 'https://res.cloudinary.com/dzby0c2up/image/upload/v1768970349/7_ez5qyp.png'
+};
+
+// 6. Transcript từng Part
+const transcripts = {
+    part1: `Part 1 Transcript:
+
+1. Teacher: "Please sit down in your seats. Class is starting now."
+
+2. Teacher: "Take out your pencil cases and put them on your desks. We're going to have a spelling test."
+
+3. Teacher: "It's snack time! Please wash your hands at the sink before you eat. Make sure to use soap."
+
+4. Teacher: "We're going to make paper airplanes today. First, fold your paper in half like this. Then fold the corners down to make wings."
+
+5. Father: "Lisa, can you help me set the table for dinner? Please put the plates and forks on the table. We're eating in five minutes."
+
+6. Teacher: "Today we learned about the four seasons. Now I want you to draw a picture showing your favorite season. Under your picture, write four sentences describing what happens in that season and why you like it."
+
+7. Teacher: "We're going to do an experiment with water today. First, take the empty cup in front of you and fill it halfway with water from the pitcher. Then, put three drops of food coloring into the water. After that, watch carefully and write down what you see happening. Don't drink the water because it has food coloring in it."`,
+    
+    part2: `Part 2 Transcript:
+
+8. Boy: "Have you finished your book report yet?"
+   Girl: "Not yet. When do we have to give it to the teacher?"
+   Boy: "She said we need to turn it in next Friday."
+
+9. Boy: "Mom, can I play video games now?"
+   Mother: "Did you finish your homework?"
+   Boy: "I finished my math homework, but I still need to do my reading homework."
+   Mother: "Then you need to finish your reading first before you can play."
+   Boy: "Okay, I'll go do it now."
+
+10. Teacher: "How was your trip to the aquarium with your family?"
+    Boy: "It was amazing! The jellyfish were so colorful, and the penguins were funny to watch. But I liked the shark tank the most. The sharks were huge!"
+    Teacher: "That sounds exciting!"
+
+11. Girl: "Do you want to play soccer at recess today?"
+    Boy: "I'd love to, but I forgot to bring my water bottle from home. I need to get a drink first."
+    Girl: "That's okay. Let's go to the water fountain together, and then we can play."
+
+12. Man: "Good morning! What can I get for you?"
+    Girl: "Hi. Do you have any chocolate cupcakes?"
+    Man: "I'm sorry, we sold out this morning. They're very popular. We'll make more tomorrow."
+    Girl: "Oh, I really wanted some for my friend's birthday party."
+    Man: "If you give me your phone number, I can call you tomorrow morning when they're ready. Then you can come pick them up."
+    Girl: "That would be great! Thank you!"
+
+13. Boy: "What are you doing after school today, Michelle?"
+    Girl: "I'm going to the bookstore to buy a gift for my mom's birthday. It's next week. Do you want to come with me? You're good at picking books."
+    Boy: "Sure! What time are we going?"
+    Girl: "Can we meet at the bookstore at four o'clock?"
+
+14. Boy: "Are you going to the movies with us on Saturday afternoon?"
+    Girl: "I really want to, but my grandmother is visiting from another city this weekend."
+    Boy: "Oh, is she staying at your house?"
+    Girl: "Yes, and we're taking her to the beach on Saturday. My whole family is going. We haven't seen her in six months, so I need to spend time with her."
+    Boy: "That's nice. Maybe you can come to the movies another time."`,
+    
+    part3: `Part 3 Transcript:
+
+15. Emily: "Hi Grandma, it's Emily. Thank you for the birthday present! I love the book you sent me. I'll call you again this weekend. Love you!"
+
+16. Ben: "Hey Michael, this is Ben. My family is going to the amusement park on Sunday. We have an extra ticket. Do you want to come with us? We're leaving at ten in the morning. Let me know!"
+
+17. Jessica: "Hi Amanda, this is Jessica. You know how you wanted to find a good tennis racket? Well, I was at the sports store with my brother yesterday, and I saw one that looked really nice. It was the blue and white one that you told me about. The price was pretty good too. If you want, we can go to the store together after school tomorrow, and you can try it out to see if you like it. Call me back!"
+
+18. Eric: "Hi Andrew. This is Eric. I can't come over to your house to play video games tomorrow afternoon. My mom just reminded me that I have a doctor's appointment. I need to get a checkup before soccer season starts. Sorry about that. Maybe we can play this weekend instead?"
+
+19. Mia: "Hi Chloe. This is Mia. I know we were supposed to go swimming at the pool on Wednesday, but I just found out that my piano recital is that same day. My teacher moved it from Thursday to Wednesday because the concert hall wasn't available on Thursday. I've been practicing for weeks, so I really can't miss it. Can we go swimming next Wednesday instead? I'm really sorry!"
+
+20. Matthew: "Hi Daniel, this is Matthew. You won't believe this! I just found out that we both got accepted into the school band! The music teacher put the list on the bulletin board outside the music room today. I saw your name and my name on it. Our first band practice is next Monday after school. We need to bring our instruments. I'm so excited to play music with you!"
+
+21. Ms. Parker: "Hello Grace, this is Ms. Parker, your dance teacher. I'm calling about the dance performance on Friday evening. We were planning to have it in the school auditorium like we always do. However, the school is painting the auditorium this week, and the paint won't be dry in time for our show. Don't worry---the performance is still happening! We're moving it to the gym instead. Everything else stays the same. Please arrive at six o'clock and wear your costume. See you Friday!"`,
+    
+    part4: `Part 4 Transcript:
+
+Story 1 (Questions 22-25) - Sophie's Bracelet:
+"Sophie woke up on Sunday morning and looked at her wrist. Her favorite silver bracelet was gone! Her aunt had given it to her for her birthday, and she wore it every day.
+
+'Where could it be?' Sophie wondered. She decided to look in the bathroom first. Maybe it fell off when she was brushing her teeth last night. Sophie searched around the sink and even looked in the bathtub, but the bracelet wasn't there.
+
+Next, Sophie went to the kitchen. 'Maybe I took it off when I was washing dishes after dinner,' she thought. She looked on the counter and checked near the sink. She even looked inside the dish soap bottle holder. Still no bracelet.
+
+Sophie was starting to feel upset, so she went to talk to her mom. 'Mom, I can't find my silver bracelet anywhere,' she said sadly. Her mom thought for a moment and asked, 'Did you wear it when you were playing in the backyard yesterday?' Sophie remembered playing outside in the afternoon.
+
+Sophie ran to the backyard and looked near the swing set where she had been playing. There, in the grass next to the swing, was her silver bracelet! It must have fallen off while she was swinging. 'I found it!' Sophie shouted happily. From now on, she decided to keep her special bracelet in a safe place when she played outside."
+
+Story 2 (Questions 26-29) - The Family Road Trip:
+"'Is everyone ready?' Paul's father called from the front door. 'We need to leave soon!' Paul's family was preparing for a road trip to visit their grandparents who lived in another state. It was a long drive, so they needed to leave early in the morning.
+
+Paul and his younger sister Maya were both very excited. Paul packed his tablet so he could play games and watch movies in the car. Maya packed her sketchbook and colored pencils because she loved to draw during long trips.
+
+Their mother was very careful about planning the trip. She checked the weather, made a list of snacks to bring, and printed out the directions. She looked at the map three times to make sure she knew which roads to take.
+
+After two hours of driving, Maya looked out the window and said, 'Look! I can see cows in that field!' Paul looked out his window too. The countryside was beautiful with green fields and farms everywhere.
+
+When they finally arrived at their grandparents' house, everyone was tired but happy. Paul's grandmother was waiting at the door with a big smile. She had baked cookies for them! Paul and Maya gave her big hugs. It was going to be a wonderful visit."
+
+Science Lesson (Questions 30-32) - Penguins:
+"Today we're going to learn about penguins. Penguins are birds, but they are very different from most other birds. The most special thing about penguins is that they cannot fly. While most birds use their wings to fly through the air, penguins use their wings to swim through water. Penguins are excellent swimmers and can move very fast underwater.
+
+Penguins live in cold places, especially in Antarctica where it is freezing cold all year. To stay warm in such cold temperatures, penguins have special features. They have thick layers of fat under their skin that work like a warm blanket. They also have many small feathers packed tightly together. These feathers are waterproof, which means water cannot get through them. When penguins swim in the icy ocean, their feathers keep their skin dry and warm underneath. Penguins also huddle together in large groups when it is very cold. By standing close to each other, they share body heat and stay warmer. Baby penguins stay in the middle of the group where it is warmest and safest. This teamwork helps penguins survive in one of the coldest places on Earth."
+
+Science Lesson (Questions 33-35) - How Volcanoes Form:
+"Have you ever wondered how volcanoes form? Today I'll explain what happens deep inside the Earth to create these powerful mountains. Deep below the surface of the Earth, it is extremely hot. The rock there is so hot that it melts and becomes liquid. This melted rock is called magma.
+
+The Earth's surface is not one solid piece. It is made up of large sections called tectonic plates that fit together like puzzle pieces. These plates move very slowly, sometimes pushing against each other or pulling apart. When the plates move, they can create cracks or weak spots in the Earth's crust. The hot magma under the surface is always looking for a way to escape, and it pushes up through these weak spots.
+
+When magma reaches the surface and comes out of the ground, we call it lava. The lava flows down the sides of the opening, and when it cools, it hardens into rock. Over many years, layers of hardened lava pile up on top of each other. Each time the volcano erupts, more lava flows out and adds another layer. Slowly, these layers build up higher and higher, forming a mountain shape. That's how a volcano is formed! Some volcanoes take thousands of years to grow to their full size."
+
+History Lesson (Questions 36-39) - The First Computer:
+"Today we're going to learn about the first computers. The computers we use today are small and fast, but the very first computers were completely different. They were invented about eighty years ago and were as big as an entire room! These early computers were so large because they used thousands of glass tubes and wires to do their work.
+
+The first electronic computer was called ENIAC, which stands for Electronic Numerical Integrator and Computer. It was built in 1945 by scientists in the United States. ENIAC was created to help solve difficult math problems very quickly. Before ENIAC, people had to solve complicated math problems by hand, which took a very long time. ENIAC could do math much faster than any human. However, it had many limitations. It was very expensive to build and needed a lot of electricity to run. The machine also got very hot when it was working.
+
+Over the years, computers became smaller and more powerful. Scientists invented the microchip, which is a tiny piece of technology that can do the work of thousands of glass tubes. Today's computers are millions of times faster than ENIAC, and they can fit in our pockets! We use computers every day for many things like learning, playing games, and talking to friends. It's amazing to think that it all started with a machine that filled an entire room."`
+};
+
+// 7. Câu hỏi
+const questions = [
+    // PART 1 (Questions 1-7 with images)
+    { num: 1, part: 1, type: 'image', text: 'What did the teacher tell the students to do?', options: { A: 'Stand up', B: 'Sit down', C: 'Go outside' } },
+    { num: 2, part: 1, type: 'image', text: 'What did the teacher tell the students to do?', options: { A: 'Take out pencil cases', B: 'Put away books', C: 'Open textbooks' } },
+    { num: 3, part: 1, type: 'image', text: 'What did the teacher tell the students to do?', options: { A: 'Drink water', B: 'Wash hands with soap', C: 'Eat snacks' } },
+    { num: 4, part: 1, type: 'image', text: 'What did the teacher tell the students to do?', options: { A: 'Fold paper to make airplanes', B: 'Draw pictures', C: 'Write sentences' } },
+    { num: 5, part: 1, type: 'image', text: 'What did the father tell Lisa to do?', options: { A: 'Cook dinner', B: 'Set the table', C: 'Wash dishes' } },
+    { num: 6, part: 1, type: 'image', text: 'What did the teacher tell the students to do?', options: { A: 'Read about seasons', B: 'Talk about seasons', C: 'Draw and write about favorite season' } },
+    { num: 7, part: 1, type: 'image', text: 'What did the teacher tell the students to do?', options: { A: 'Fill cup with water and add food coloring', B: 'Drink the colored water', C: 'Pour water on the floor' } },
+    
+    // PART 2 (Questions 8-14)
+    { num: 8, part: 2, type: 'text', text: 'When is the book report due?', options: { A: 'Today', B: 'Tomorrow', C: 'Next Friday' } },
+    { num: 9, part: 2, type: 'text', text: 'What will the boy do?', options: { A: 'Play video games', B: 'Finish his reading homework', C: 'Do his math homework' } },
+    { num: 10, part: 2, type: 'text', text: 'What does the boy like best about the aquarium?', options: { A: 'The jellyfish', B: 'The penguins', C: 'The shark tank' } },
+    { num: 11, part: 2, type: 'text', text: 'What will the boy and girl do next?', options: { A: 'Play soccer', B: 'Go to the water fountain', C: 'Go home to get a water bottle' } },
+    { num: 12, part: 2, type: 'text', text: 'Why does the girl write down her phone number?', options: { A: 'Because she wants to order a birthday cake', B: 'Because she wants to know when cupcakes are ready', C: 'Because she wants to work at the bakery' } },
+    { num: 13, part: 2, type: 'text', text: 'What does the girl want the boy to do?', options: { A: 'Buy a gift for his mom', B: 'Go to the bookstore with her', C: 'Come to her mom\'s birthday party' } },
+    { num: 14, part: 2, type: 'text', text: 'What will the girl do on Saturday?', options: { A: 'Go to the movies', B: 'Take her grandmother to the beach', C: 'Visit another city' } },
+    
+    // PART 3 (Questions 15-21)
+    { num: 15, part: 3, type: 'text', text: 'Why did Emily call?', options: { A: 'To invite her grandmother to visit', B: 'To thank her grandmother for a present', C: 'To ask for a book' } },
+    { num: 16, part: 3, type: 'text', text: 'What will Ben do on Sunday?', options: { A: 'Visit Michael\'s house', B: 'Go to the amusement park', C: 'Buy tickets' } },
+    { num: 17, part: 3, type: 'text', text: 'Why did Jessica call?', options: { A: 'To invite Amanda to play tennis', B: 'To tell her about a tennis racket at a store', C: 'To ask her to go shopping with her brother' } },
+    { num: 18, part: 3, type: 'text', text: 'What will Eric do tomorrow?', options: { A: 'Play video games at Andrew\'s house', B: 'Go to a doctor\'s appointment', C: 'Play soccer' } },
+    { num: 19, part: 3, type: 'text', text: 'What will Mia do on Wednesday?', options: { A: 'Go swimming', B: 'Perform in a piano recital', C: 'Practice piano at home' } },
+    { num: 20, part: 3, type: 'text', text: 'Why did Matthew call?', options: { A: 'To tell Daniel they got into the school band', B: 'To ask Daniel to join the school band', C: 'To remind Daniel about music class' } },
+    { num: 21, part: 3, type: 'text', text: 'Why did Ms. Parker call?', options: { A: 'To tell Grace where the dance performance will be', B: 'To cancel the dance performance on Friday', C: 'To remind Grace to practice dancing' } },
+    
+    // PART 4 (Questions 22-39)
+    { num: 22, part: 4, type: 'text', text: 'What is the story about?', options: { A: 'A girl searching for her bracelet', B: 'A girl playing in the backyard', C: 'A girl getting a birthday present' } },
+    { num: 23, part: 4, type: 'text', text: 'Where did Sophie look first?', options: { A: 'The kitchen', B: 'The bathroom', C: 'The backyard' } },
+    { num: 24, part: 4, type: 'text', text: 'What did Sophie think when she went to the kitchen?', options: { A: 'She took it off while washing dishes', B: 'Her mom put it on the counter', C: 'The bracelet was in the soap bottle' } },
+    { num: 25, part: 4, type: 'text', text: 'Where did Sophie find her bracelet?', options: { A: 'In the bathroom', B: 'In the kitchen', C: 'In the backyard' } },
+    { num: 26, part: 4, type: 'text', text: 'Who plans the trip carefully?', options: { A: 'Paul', B: 'Maya', C: 'The mother' } },
+    { num: 27, part: 4, type: 'text', text: 'Why did Maya pack colored pencils?', options: { A: 'To give them to her grandmother', B: 'To draw during the trip', C: 'To share with Paul' } },
+    { num: 28, part: 4, type: 'text', text: 'What did the grandmother do for them?', options: { A: 'Packed snacks for the trip', B: 'Looked at a map', C: 'Baked cookies' } },
+    { num: 29, part: 4, type: 'text', text: 'Who is Maya?', options: { A: 'Paul\'s mother', B: 'Paul\'s sister', C: 'Paul\'s grandmother' } },
+    { num: 30, part: 4, type: 'text', text: 'What is special about penguins?', options: { A: 'They can fly very high', B: 'They cannot fly', C: 'They live in warm places' } },
+    { num: 31, part: 4, type: 'text', text: 'How do penguins stay warm?', options: { A: 'They have thick fat and waterproof feathers', B: 'They fly to warmer places', C: 'They stay in the water all the time' } },
+    { num: 32, part: 4, type: 'text', text: 'Why do penguins huddle together?', options: { A: 'To find food', B: 'To share body heat and stay warm', C: 'To swim faster' } },
+    { num: 33, part: 4, type: 'text', text: 'What is magma?', options: { A: 'Cold rock underground', B: 'Melted rock underground', C: 'Water from inside the Earth' } },
+    { num: 34, part: 4, type: 'text', text: 'What happens when magma reaches the surface?', options: { A: 'It becomes lava and flows out', B: 'It turns into water', C: 'It goes back underground' } },
+    { num: 35, part: 4, type: 'text', text: 'How do volcanoes grow over time?', options: { A: 'Rain makes them bigger', B: 'Layers of hardened lava pile up', C: 'Rocks fall from the sky' } },
+    { num: 36, part: 4, type: 'text', text: 'What is a good name for this lesson?', options: { A: 'How to use a computer', B: 'The history of early computers', C: 'Why computers are small today' } },
+    { num: 37, part: 4, type: 'text', text: 'How big was the first computer?', options: { A: 'As small as a book', B: 'As big as a car', C: 'As big as a room' } },
+    { num: 38, part: 4, type: 'text', text: 'What was ENIAC built to do?', options: { A: 'Play games', B: 'Solve math problems quickly', C: 'Send messages to friends' } },
+    { num: 39, part: 4, type: 'text', text: 'What made computers smaller?', options: { A: 'Using less electricity', B: 'The invention of the microchip', C: 'Making them cheaper' } }
+];
+
+// ========== HẾT PHẦN CẤU HÌNH ==========
+
+let studentInfo = {};
+let answers = {};
+let startTime;
+let audioElement = null;
+let isAudioPlaying = false;
+let audioStarted = false;
+
+// Biến tracking nghe lại
+let replayLog = [];
+let reviewAudioElement = null;
+let lastSeekTime = 0;
+let isTracking = false;
+
+function init() {
+    document.getElementById('testTitle').textContent = TEST_CONFIG.testTitle;
+    document.getElementById('testTitleHeader').textContent = TEST_CONFIG.testTitle;
+    document.getElementById('totalQuestions').textContent = TEST_CONFIG.totalQuestions;
+    document.getElementById('totalQuestionsDisplay').textContent = TEST_CONFIG.totalQuestions;
+    document.getElementById('unansweredCount').textContent = TEST_CONFIG.totalQuestions;
+}
+
+async function verifyStudentCode(studentCode) {
+    try {
+        const url = `${GOOGLE_SCRIPT_URL}?action=verify&code=${encodeURIComponent(studentCode)}`;
+        const response = await fetch(url, { method: 'GET' });
+        if (!response.ok) {
+            console.error('HTTP Error:', response.status);
+            return { status: 'error', exists: false };
+        }
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Lỗi:', error);
+        return { status: 'error', exists: false };
+    }
+}
+
+async function startTest() {
+    const code = document.getElementById('studentCode').value.trim().toUpperCase();
+    if (!code) {
+        alert('Vui lòng nhập mã học sinh!');
+        return;
+    }
+    if (!code.match(/^HS\d{3}$/)) {
+        alert('Mã học sinh không đúng định dạng (ví dụ: HS001)');
+        return;
+    }
+    
+    const startBtn = document.querySelector('button[onclick="startTest()"]');
+    const originalText = startBtn.innerHTML;
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="spinner"></div><span>Đang kiểm tra mã...</span></div>';
+    
+    const verifyResult = await verifyStudentCode(code);
+    
+    if (verifyResult.status === 'error' || !verifyResult.exists) {
+        startBtn.disabled = false;
+        startBtn.innerHTML = originalText;
+        alert('⚠️ MÃ HỌC SINH KHÔNG TỒN TẠI!\n\nVui lòng liên hệ Hotline: 0976222792');
+        return;
+    }
+    
+    studentInfo = { 
+        studentCode: code,
+        studentName: verifyResult.studentName || ''
+    };
+    
+    document.getElementById('infoScreen').classList.add('hidden');
+    document.getElementById('testScreen').classList.remove('hidden');
+    document.getElementById('audioPlayerMain').classList.remove('hidden');
+    document.getElementById('headerStudentCode').textContent = 'Mã: ' + code + (verifyResult.studentName ? ' - ' + verifyResult.studentName : '');
+    
+    renderQuestions();
+    setupAudio();
+    startTime = new Date();
+}
+
+function setupAudio() {
+    audioElement = document.getElementById('mainAudio');
+    audioElement.src = AUDIO_URL;
+    audioElement.volume = 1.0;
+    audioElement.addEventListener('canplaythrough', () => {
+        document.getElementById('audioStatus').textContent = 'Sẵn sàng - Bấm ▶ để bắt đầu';
+    });
+    audioElement.addEventListener('error', () => {
+        document.getElementById('audioStatus').textContent = 'Lỗi tải audio';
+        alert('Lỗi khi tải audio. Vui lòng kiểm tra kết nối!');
+    });
+    audioElement.load();
+}
+
+function toggleAudio() {
+    if (!audioElement || audioStarted) return;
+    const playBtn = document.getElementById('playBtnMain');
+    const statusSpan = document.getElementById('audioStatus');
+    audioElement.play().then(() => {
+        playBtn.disabled = true;
+        statusSpan.textContent = 'Đang phát... (không thể dừng)';
+        document.getElementById('clockIcon').classList.add('text-red-600');
+        isAudioPlaying = true;
+        audioStarted = true;
+    }).catch(error => {
+        alert('Không thể phát audio!');
+    });
+}
+
+function setVolume(value) {
+    if (audioElement) audioElement.volume = value / 100;
+}
+
+function updateAudioTime() {
+    if (!audioElement) return;
+    const current = formatTime(audioElement.currentTime);
+    const duration = formatTime(audioElement.duration);
+    document.getElementById('audioTime').textContent = `${current} / ${duration}`;
+}
+
+function formatTime(seconds) {
+    if (isNaN(seconds)) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function onAudioComplete() {
+    document.getElementById('playBtnMain').textContent = '✓';
+    document.getElementById('audioStatus').textContent = 'Đã kết thúc';
+    setTimeout(() => {
+        alert('⏰ Đã hết thời gian! Hệ thống sẽ tự động nộp bài.');
+        submitTest();
+    }, 2000);
+}
+
+function renderQuestions() {
+    const container = document.getElementById('questionsContainer');
+    let html = '';
+    let currentPart = 0;
+    const partTitles = {
+        1: 'Part 1: Look at the pictures and listen',
+        2: 'Part 2: Listen to conversations',
+        3: 'Part 3: Listen to phone messages',
+        4: 'Part 4: Listen to stories'
+    };
+    
+    questions.forEach((q) => {
+        if (q.part !== currentPart) {
+            currentPart = q.part;
+            html += `<div class="bg-green-600 text-white p-4 rounded-xl mb-6 mt-8"><h3 class="text-2xl font-bold text-center">${partTitles[currentPart]}</h3></div>`;
+        }
+        html += `<div class="border-2 border-green-200 rounded-xl p-6 mb-6 bg-gray-50"><div class="flex gap-4"><div class="flex-shrink-0"><div class="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">${q.num}</div></div><div class="flex-1">`;
+        if (q.type === 'image' && questionImages[q.num]) {
+            html += `<div class="question-image"><img src="${questionImages[q.num]}" alt="Question ${q.num}"></div>`;
+        }
+        if (q.text) html += `<p class="text-gray-800 mb-4 text-lg font-semibold mt-4">${q.text}</p>`;
+        html += `<div class="space-y-2 mt-4">`;
+        Object.entries(q.options).forEach(([key, value]) => {
+            html += `<label class="flex items-start gap-3 p-4 rounded-lg cursor-pointer transition-all bg-white border-2 border-gray-300 hover:bg-green-50 answer-option" data-question="${q.num}" data-answer="${key}"><input type="radio" name="q${q.num}" value="${key}" onchange="handleAnswer(${q.num}, '${key}')" class="mt-1 w-5 h-5 text-green-600"><span class="flex-1 text-gray-700"><span class="font-semibold text-green-700">${key}.</span> ${value}</span></label>`;
+        });
+        html += `</div></div></div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function handleAnswer(questionNum, answer) {
+    answers[questionNum] = answer;
+    updateProgress();
+    document.querySelectorAll(`label[data-question="${questionNum}"]`).forEach(label => {
+        if (label.dataset.answer === answer) {
+            label.classList.remove('bg-white', 'border-gray-300');
+            label.classList.add('bg-green-100', 'border-green-500');
+        } else {
+            label.classList.remove('bg-green-100', 'border-green-500');
+            label.classList.add('bg-white', 'border-gray-300');
+        }
+    });
+}
+
+function updateProgress() {
+    const answered = Object.keys(answers).length;
+    const percent = Math.round((answered / 39) * 100);
+    document.getElementById('progress').textContent = answered;
+    document.getElementById('progressPercent').textContent = percent + '%';
+    document.getElementById('progressBar').style.width = percent + '%';
+    const unanswered = 39 - answered;
+    if (unanswered > 0) {
+        document.getElementById('warningBox').classList.remove('hidden');
+        document.getElementById('unansweredCount').textContent = unanswered;
+    } else {
+        document.getElementById('warningBox').classList.add('hidden');
+    }
+}
+
+async function submitTest() {
+    if (audioElement) audioElement.pause();
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="spinner"></div><span>Đang nộp bài...</span>';
+    
+    let correctCount = 0;
+    let wrongQuestions = [];
+    Object.keys(correctAnswers).forEach(q => {
+        const qNum = parseInt(q);
+        if (answers[qNum] === correctAnswers[qNum]) correctCount++;
+        else wrongQuestions.push(qNum + (answers[qNum] ? '' : '(bỏ trống)'));
+    });
+    
+    const totalScore = Math.round((correctCount / 39) * 100);
+    const timeUsed = Math.round((new Date() - startTime) / 60000);
+    
+    const dataToSend = {
+        timestamp: new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        studentCode: studentInfo.studentCode,
+        testWeek: TEST_CONFIG.testWeek,
+        score: totalScore,
+        correctAnswers: correctCount,
+        totalQuestions: 39,
+        wrongQuestions: wrongQuestions.join(', ') || 'Không có',
+        replayLog: 'Chưa có dữ liệu',
+        answers: JSON.stringify(answers)
+    };
+    
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(dataToSend)
+        });
+    } catch (error) {
+        console.error('Lỗi:', error);
+    }
+    
+    document.getElementById('testScreen').classList.add('hidden');
+    document.getElementById('audioPlayerMain').classList.add('hidden');
+    document.getElementById('resultScreen').classList.remove('hidden');
+    document.getElementById('resultScore').textContent = totalScore + '%';
+    document.getElementById('resultCorrect').textContent = correctCount + '/39';
+    document.getElementById('resultTime').textContent = timeUsed + ' phút';
+    
+    renderReview();
+    document.getElementById('reviewAudio').src = AUDIO_URL;
+    setTimeout(() => startTrackingReplay(), 1000);
+}
+
+function startTrackingReplay() {
+    reviewAudioElement = document.getElementById('reviewAudio');
+    if (!reviewAudioElement) return;
+    reviewAudioElement.addEventListener('play', () => {
+        replayLog.push({action: 'play', time: formatTime(reviewAudioElement.currentTime), actualSeconds: Math.floor(reviewAudioElement.currentTime)});
+    });
+    reviewAudioElement.addEventListener('pause', () => {
+        replayLog.push({action: 'pause', time: formatTime(reviewAudioElement.currentTime), actualSeconds: Math.floor(reviewAudioElement.currentTime)});
+    });
+    reviewAudioElement.addEventListener('seeked', () => {
+        const currentTime = Math.floor(reviewAudioElement.currentTime);
+        if (Math.abs(currentTime - lastSeekTime) > 2) {
+            replayLog.push({action: 'seek', time: formatTime(currentTime), actualSeconds: currentTime});
+            lastSeekTime = currentTime;
+        }
+    });
+}
+
+function generateReplayReport() {
+    if (replayLog.length === 0) return 'Không nghe lại';
+    let report = `Tổng ${replayLog.length} hành động:\n`;
+    const plays = replayLog.filter(log => log.action === 'play');
+    const seeks = replayLog.filter(log => log.action === 'seek');
+    report += `\n▶️ Phát lại: ${plays.length} lần\n`;
+    plays.forEach((log, i) => report += `   ${i+1}. Tại ${log.time}\n`);
+    if (seeks.length > 0) {
+        report += `\n⏩ Tua đến: ${seeks.length} lần\n`;
+        seeks.forEach((log, i) => report += `   ${i+1}. Tua đến ${log.time}\n`);
+    }
+    return report;
+}
+
+async function sendReplayLog() {
+    if (replayLog.length === 0) {
+        alert('Bạn chưa nghe lại audio nào!');
+        return;
+    }
+    const sendBtn = document.getElementById('sendReplayBtn');
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<div class="flex items-center justify-center gap-2"><div class="spinner"></div><span>Đang gửi...</span></div>';
+    
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                timestamp: new Date().toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'}),
+                studentCode: studentInfo.studentCode,
+                testWeek: TEST_CONFIG.testWeek,
+                action: 'updateReplayLog',
+                replayLog: generateReplayReport()
+            })
+        });
+        alert('✅ Đã gửi lịch sử nghe lại!');
+        sendBtn.innerHTML = '✓ Đã gửi thành công';
+    } catch (error) {
+        alert('Lỗi khi gửi!');
+        sendBtn.disabled = false;
+    }
+}
+
+function renderReview() {
+    const container = document.getElementById('reviewContainer');
+    let html = '';
+    let currentPart = 0;
+    const partTitles = {1: 'Part 1', 2: 'Part 2', 3: 'Part 3', 4: 'Part 4'};
+    
+    questions.forEach(q => {
+        if (q.part !== currentPart) {
+            currentPart = q.part;
+            html += `<div class="bg-green-600 text-white p-4 rounded-xl mb-6 mt-8"><h3 class="text-2xl font-bold text-center">${partTitles[currentPart]}</h3><button onclick="toggleReviewTranscript(${currentPart})" class="mt-3 bg-white text-green-600 px-4 py-2 rounded-lg w-full">🔄 Hiện/Ẩn Transcript</button><div id="reviewTranscript${currentPart}" class="hidden transcript-box">${transcripts['part'+currentPart]}</div></div>`;
+        }
+        const userAnswer = answers[q.num];
+        const correctAnswer = correctAnswers[q.num];
+        const isCorrect = userAnswer === correctAnswer;
+        html += `<div class="border-2 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'} rounded-xl p-6 mb-6"><div class="flex gap-4"><div class="w-10 h-10 ${isCorrect ? 'bg-green-600' : 'bg-red-600'} text-white rounded-full flex items-center justify-center font-bold">${q.num}</div><div class="flex-1">`;
+        if (q.type === 'image' && questionImages[q.num]) html += `<div class="question-image"><img src="${questionImages[q.num]}"></div>`;
+        if (q.text) html += `<p class="text-gray-800 mb-4 text-lg font-semibold">${q.text}</p>`;
+        html += '<div class="space-y-2">';
+        Object.entries(q.options).forEach(([key, value]) => {
+            let cls = 'bg-white border-gray-300';
+            if (key === correctAnswer && key === userAnswer) cls = 'correct-answer';
+            else if (key === userAnswer) cls = 'wrong-answer';
+            html += `<div class="flex items-start gap-3 p-4 rounded-lg border-2 ${cls}"><span class="flex-1 text-gray-700"><span class="font-semibold text-green-700">${key}.</span> ${value}</span></div>`;
+        });
+        html += '</div></div></div></div>';
+    });
+    container.innerHTML = html;
+}
+
+function toggleReviewTranscript(partNum) {
+    document.getElementById('reviewTranscript' + partNum).classList.toggle('hidden');
+}
+
+window.onload = init;
+</script>
+
+</body>
+</html>
